@@ -1,0 +1,12 @@
+--- Tool Wrapper (T1q) ---
+9081254: ]!==I||q[53]!==h||q[54]!==B||q[55]!==x||q[56]!==p)U=EP.default.createElement(V,{flexDirection:h,justifyContent:B,marginTop:x,width:p},I),q[51]=V,q[52]=I,q[53]=h,q[54]=B,q[55]=x,q[56]=p,q[57]=U;else U=
+
+--- User Msg wrapper (userMessageBackground) ---
+,K.name),q[11]=K.name,q[12]=h,q[13]=B;else B=q[13];let x=!Y,p;if(q[14]===Symbol.for("react.memo_cache_sentinel"))p=i7.createElement(f,{backgroundColor:"userMessageBackground"},"Plugin"),q[14]=p;else p
+,K.name),q[37]=K.name,q[38]=h,q[39]=B;else B=q[39];let x=!Y,p;if(q[40]===Symbol.for("react.memo_cache_sentinel"))p=i7.createElement(f,{backgroundColor:"userMessageBackground"},"Plugin"),q[40]=p;else p
+,K.name),q[62]=K.name,q[63]=B,q[64]=x;else x=q[64];let p=!Y,F;if(q[65]===Symbol.for("react.memo_cache_sentinel"))F=i7.createElement(f,{backgroundColor:"userMessageBackground"},"Plugin"),q[65]=F;else F
+name),q[98]=K.name,q[99]=h,q[100]=B;else B=q[100];let x=!Y,p;if(q[101]===Symbol.for("react.memo_cache_sentinel"))p=i7.createElement(f,{backgroundColor:"userMessageBackground"},"MCP"),q[101]=p;else p=q
+me),q[120]=K.name,q[121]=J,q[122]=j;else j=q[122];let D=!Y,X;if(q[123]===Symbol.for("react.memo_cache_sentinel"))X=i7.createElement(f,{backgroundColor:"userMessageBackground"},"MCP"),q[123]=X;else X=q
+memo_cache_sentinel"))Z=LP.createElement(f,{color:"subtle"},i6.pointer," "),q[4]=Z;else Z=q[4];let G;if(q[5]!==_)G=LP.createElement(f,{backgroundColor:"userMessageBackground"},Z,LP.createElement(f,{co
+o_cache_sentinel"))X=LP.createElement(f,{color:"subtle"},i6.pointer," "),q[13]=X;else X=q[13];let M;if(q[14]!==j)M=LP.createElement(f,{backgroundColor:"userMessageBackground"},X,LP.createElement(f,{co
+mo_cache_sentinel"))H=SY6.createElement(f,{color:"subtle"},i6.pointer," "),q[4]=H;else H=q[4];let O;if(q[5]!==$)O=SY6.createElement(f,{backgroundColor:"userMessageBackground"},H,SY6.createElement(f,{c

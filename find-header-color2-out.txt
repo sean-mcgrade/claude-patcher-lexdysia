@@ -1,0 +1,19 @@
+
+--- shouldShowDot usage at 9078302 ---
+n:Y,tools:z,commands:w,verbose:_,inProgressToolUseIDs:$,progressMessagesForMessage:H,shouldAnimate:O,shouldShowDot:J,inProgressToolCallCount:j,lookups:D,isTranscriptMode:X}=A,M=YA(),[P]=L7(),W=N1q(TlY),Z=u_4(K.id),G=!1;if(!z)return w6(Error(`Tools array is undefined for tool ${K.name}`)),null;let T,V,N,v,y,m,h,B,x,p,F;if(q[0]!==Y||q[1]!==w||q[2]!==j||q[3]!==$||q[4]!==!1||q[5]!==X||q[6]!==D||q[7]!=
+
+--- shouldShowDot usage at 9084977 ---
+ty unlock-keychain"))),A[1]=Y;else Y=A[1];return Y}function E1q(A){let q=K6(25),{param:K,addMargin:Y,shouldShowDot:z,onOpenRateLimitOptions:w}=A,{text:_}=K;if(AV1(_))return null;if(ga7(_)){let $;if(q[0]!==w||q[1]!==_)$=wz.default.createElement(v1q,{text:_,onOpenRateLimitOptions:w}),q[0]=w,q[1]=_,q[2]=$;else $=q[2];return $}switch(_){case UK6:return null;case Ad:{let $;if(q[3]===Symbol.for("react.m
+
+--- ● char with color at 5001640 ---
+},SJ.createElement(f,{color:Y},X)),q[9]=Y,q[10]=X,q[11]=M;else M=q[11];return M}var SJ,Ae7,qe7,gy9="●",Fy9=2000,py9;var nM8=E(()=>{a6();B6();Iu();z36();SJ=A6(X6(),1),Ae7=K36(),qe7=[...Ae7,...[...Ae7].
+
+--- ● char with color at 6897270 ---
+nnected:w}=wL8(),_=w===!1?"inactive":"text";if(K){let j;if(A[0]!==_)j=_7.createElement(f,{color:_},"●"),A[0]=_,A[1]=j;else j=A[1];let D;if(A[2]!==Y||A[3]!==j)D=_7.createElement(b,{ref:Y,flexWrap:"wrap
+
+--- ● char with color at 11410217 ---
+if(q[5]===Symbol.for("react.memo_cache_sentinel"))j=nM.default.createElement(f,{color:"ansi:cyan"},"● "),q[5]=j;else j=q[5];let D;if(q[6]!==_)D=nM.default.createElement(b,null,j,nM.default.createEleme
+
+│● pattern at: -1
+
+claudeBlue_FOR_SYSTEM_SPINNER color usage at: -1
