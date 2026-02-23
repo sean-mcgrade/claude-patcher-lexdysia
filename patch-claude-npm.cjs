@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-console.log("Claude Code Color Patcher v39 - SCROLL GLITCH TYPO FIX");
+console.log("Claude Code Color Patcher v55 - RESTORED COMPACT MODE");
 console.log("==========================================================");
 
 const cliPath = path.join(process.env.LOCALAPPDATA, 'mcp-bin', 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js');
@@ -48,6 +48,50 @@ const NEW_TOOL_OUTPUT = 'y=!O6&&!Z6&&(f6?EP.default.createElement(P8,{height:1},
 if (patched.includes(OLD_TOOL_OUTPUT)) {
     patched = patched.replace(OLD_TOOL_OUTPUT, NEW_TOOL_OUTPUT);
     console.log('✓  Tool Output silenced natively.');
+    patchCount++;
+}
+
+// ─────────────────────────────────────────────────────────────
+// 3. SILENCE FILE EDIT OUTPUTS (Added/Removed lines)
+// ─────────────────────────────────────────────────────────────
+const originalLength = patched.length;
+
+// A. Hide the "+54 added, -10 removed" text headers
+patched = patched.replace(/K\.linesAdded>0&&/g, 'false&&');
+patched = patched.replace(/K\.linesRemoved>0&&/g, 'false&&');
+patched = patched.replace(/W\.stats\.linesAdded>0&&/g, 'false&&');
+patched = patched.replace(/W\.stats\.linesRemoved>0&&/g, 'false&&');
+patched = patched.replace(/K\.insertions\)Y=h8/g, 'false)Y=h8');
+patched = patched.replace(/K\.deletions\)z=h8/g, 'false)z=h8');
+
+// B. Hide the actual CODE blocks (git diff hunks) that print underneath during Edits!
+const OLD_HUNKS = '{stats:{filesCount:A.stats.filesChanged,linesAdded:A.stats.linesAdded,linesRemoved:A.stats.linesRemoved},files:q,hunks:K,loading:!1}';
+const NEW_HUNKS = '{stats:{filesCount:A.stats.filesChanged,linesAdded:A.stats.linesAdded,linesRemoved:A.stats.linesRemoved},files:q,hunks:new Map(),loading:!1}';
+if (patched.includes(OLD_HUNKS)) {
+    patched = patched.replace(OLD_HUNKS, NEW_HUNKS);
+    console.log('✓  File Hunk (Code Diffs) silenced natively.');
+    patchCount++;
+}
+
+// B2. Silence new V2.1.50 'nn4' Diff Component
+const OLD_HUNKS_2 = 'hunks:v,isLargeFile:V?.isLargeFile';
+const NEW_HUNKS_2 = 'hunks:[],isLargeFile:V?.isLargeFile';
+if (patched.includes(OLD_HUNKS_2)) {
+    patched = patched.replace(OLD_HUNKS_2, NEW_HUNKS_2);
+    console.log('✓  File Hunk V2 (nn4 Diffs) silenced natively.');
+    patchCount++;
+}
+
+// C. Brand the Start-Up header with the Patch Version
+patched = patched.replace(/Claude Code v/g, 'Claude Code Patch 55: v');
+const OLD_VERSION = /VERSION:"2\.1\.50"/g;
+const NEW_VERSION = 'VERSION:"Patch 55: v2.1.50"';
+patched = patched.replace(OLD_VERSION, NEW_VERSION);
+console.log('✓  Startup Version Banner Branded (Globally injected).');
+patchCount++;
+
+if (patched.length !== originalLength || patched.includes('false&&')) {
+    console.log('✓  File Modification diff counts silenced natively.');
     patchCount++;
 }
 
