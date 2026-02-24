@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-console.log("Claude Code Color Patcher v55 - RESTORED COMPACT MODE");
+console.log("Claude Code Color Patcher v64 - EXTREME SILENCE TOOL MOD");
 console.log("==========================================================");
 
 const cliPath = path.join(process.env.LOCALAPPDATA, 'mcp-bin', 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js');
@@ -85,7 +85,7 @@ if (patched.includes(OLD_HUNKS_2)) {
 // C. Brand the Start-Up header with the Patch Version
 patched = patched.replace(/Claude Code v/g, 'Claude Code Patch 55: v');
 const OLD_VERSION = /VERSION:"2\.1\.50"/g;
-const NEW_VERSION = 'VERSION:"Patch 55: v2.1.50"';
+const NEW_VERSION = 'VERSION:"Patch 64: v2.1.50"';
 patched = patched.replace(OLD_VERSION, NEW_VERSION);
 console.log('✓  Startup Version Banner Branded (Globally injected).');
 patchCount++;
@@ -152,8 +152,27 @@ const OLD_DOT = 'wz.default.createElement(b,{minWidth:2},wz.default.createElemen
 const NEW_DOT = 'wz.default.createElement(b,{minWidth:2},wz.default.createElement(f,{color:"claude"},"\\u258c "))';
 if (patched.includes(OLD_DOT)) { patched = patched.replace(OLD_DOT, NEW_DOT); patchCount++; }
 
+// We wrap the tool invocation (Bash name) in a strict 1-line box
+const OLD_WRAPPER = 'I=EP.default.createElement(T,{flexDirection:N},v,y,m)';
+const NEW_WRAPPER = `I=EP.default.createElement(T,{flexDirection:N,backgroundColor:"rgb(27,25,23)",paddingX:1},v,y,m)`;
+
+if (patched.includes(OLD_WRAPPER)) {
+    patched = patched.replace(OLD_WRAPPER, NEW_WRAPPER);
+    console.log('✓  Tool Invocation Header Box physically injected.');
+    patchCount++;
+}
+
+// We completely erase the `tool_result` rendering component altogether! The user only wants 1 line (the Tool Execution header) ever.
+const OLD_TOOL_RESULT = 'N=$l.createElement(b,{flexDirection:"column",width:J},M,T,V)';
+const NEW_TOOL_RESULT = `N=null`;
+if (patched.includes(OLD_TOOL_RESULT)) {
+    patched = patched.replace(OLD_TOOL_RESULT, NEW_TOOL_RESULT);
+    console.log('✓  Tool Result Body completely annihilated (Extreme Silence mode).');
+    patchCount++;
+}
+
 const OLD_TOOL_BOX = 'U=EP.default.createElement(V,{flexDirection:h,justifyContent:B,marginTop:x,width:p},I)';
-const NEW_TOOL_BOX = `U=EP.default.createElement(V,{flexDirection:h,justifyContent:B,marginTop:x,width:p,borderStyle:"single",borderColor:"${TOOL_BORDER_THEME}",backgroundColor:"${TOOL_BOX_BG}",paddingX:1,paddingLeft:2},I)`;
+const NEW_TOOL_BOX = `U=EP.default.createElement(V,{flexDirection:h,justifyContent:B,width:p},I)`;
 if (patched.includes(OLD_TOOL_BOX)) { patched = patched.replace(OLD_TOOL_BOX, NEW_TOOL_BOX); patchCount++; }
 
 fs.writeFileSync(cliPath, patched, 'utf8');
