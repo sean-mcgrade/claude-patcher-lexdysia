@@ -152,13 +152,62 @@ const OLD_DOT = 'wz.default.createElement(b,{minWidth:2},wz.default.createElemen
 const NEW_DOT = 'wz.default.createElement(b,{minWidth:2},wz.default.createElement(f,{color:"claude"},"\\u258c "))';
 if (patched.includes(OLD_DOT)) { patched = patched.replace(OLD_DOT, NEW_DOT); patchCount++; }
 
-// AST STEALTH HACK: Entirely remove Tool Invocations and Errors from the Render Map!
-// By filtering them out before Ink parses them, Claude runs identically in the background but draws exactly 0 pixels for tools.
-const OLD_MAP = 'A.message.content.map((G,T)=>F5.createElement(jiY,{key:T,param:G,addMargin:K,tools:Y,commands:z,verbose:w,inProgressToolUseIDs:_,progressMessagesForMessage:$,shouldAnimate:H,shouldShowDot:O,width:j,inProgressToolCallCount:_.size,isTranscriptMode:D,lookups:q,onOpenRateLimitOptions:X,thinkingBlockId:`${A.uuid}:${T}`,lastThinkingBlockId:W}))';
-const NEW_MAP = 'A.message.content.filter(G=>G.type!=="tool_use"&&G.type!=="tool_result").map((G,T)=>F5.createElement(jiY,{key:T,param:G,addMargin:K,tools:Y,commands:z,verbose:w,inProgressToolUseIDs:_,progressMessagesForMessage:$,shouldAnimate:H,shouldShowDot:O,width:j,inProgressToolCallCount:_.size,isTranscriptMode:D,lookups:q,onOpenRateLimitOptions:X,thinkingBlockId:`${A.uuid}:${T}`,lastThinkingBlockId:W}))';
-if (patched.includes(OLD_MAP)) {
-    patched = patched.replace(OLD_MAP, NEW_MAP);
-    console.log('✓  Stealth Mode Activated. All Tools and Errors eradicated from screen.');
+// We completely silence the tool invocation (Bash name) Green Box!
+// The engine runs it, but draws 0 pixels to the screen.
+const OLD_WRAPPER = 'I=EP.default.createElement(T,{flexDirection:N},v,y,m)';
+const NEW_WRAPPER = `I=null`;
+
+if (patched.includes(OLD_WRAPPER)) {
+    patched = patched.replace(OLD_WRAPPER, NEW_WRAPPER);
+    console.log('✓  Tool Invocation Header silently annihilated.');
+    patchCount++;
+}
+
+// RESTORED NATIVE MAPPING: The AST grouping method failed safely.
+// (We do nothing here to let Ink render ToolUses and Errors individually as intended).
+
+// We dynamically TRUNCATE the extremely long Bash arguments (powershell scripts)!
+// Instead of clipping the layout box visually, we tell Ink to natively drop the text at 1-line.
+const OLD_N6 = 'EP.default.createElement(b,{flexWrap:"nowrap"},EP.default.createElement(f,null,"(",N6,")"))';
+const NEW_N6 = 'EP.default.createElement(b,{flexWrap:"nowrap"},EP.default.createElement(f,{wrap:"truncate-end"},"(",N6,")"))';
+if (patched.includes(OLD_N6)) {
+    patched = patched.replace(OLD_N6, NEW_N6);
+    console.log('✓  Native Line-Truncation attached to Tool Payload text.');
+    patchCount++;
+}
+
+// We restore the "└ " tree character in the Error string so it visibly stems from the preceding Green Box!
+const OLD_ERROR_PREFIX = 'O=lb8.default.createElement(f,{color:$,dimColor:Y},H)';
+const NEW_ERROR_PREFIX = 'O=lb8.default.createElement(f,{color:$,dimColor:Y},"└ ")';
+if (patched.includes(OLD_ERROR_PREFIX)) {
+    patched = patched.replace(OLD_ERROR_PREFIX, NEW_ERROR_PREFIX);
+    patchCount++;
+}
+
+// We completely erase the `tool_result` rendering component altogether! The user only wants 1 line (the Tool Execution header) ever.
+const OLD_TOOL_RESULT = 'N=$l.createElement(b,{flexDirection:"column",width:J},M,T,V)';
+const NEW_TOOL_RESULT = `N=null`;
+if (patched.includes(OLD_TOOL_RESULT)) {
+    patched = patched.replace(OLD_TOOL_RESULT, NEW_TOOL_RESULT);
+    console.log('✓  Tool Result Body completely annihilated (Extreme Silence mode).');
+    patchCount++;
+}
+
+const OLD_TOOL_BOX = 'U=EP.default.createElement(V,{flexDirection:h,justifyContent:B,marginTop:x,width:p},I)';
+const NEW_TOOL_BOX = `U=EP.default.createElement(V,{flexDirection:h,justifyContent:B,width:p},I)`;
+if (patched.includes(OLD_TOOL_BOX)) { patched = patched.replace(OLD_TOOL_BOX, NEW_TOOL_BOX); patchCount++; }
+
+// We manually force the Error Output text to perfectly truncate horizontally AND vertically!
+// First we strip out hardcoded newlines logic, replace newlines with a spacer, limit via Ink truncate, and nullify the tooltip
+const errStart = patched.indexOf('H=YP.createElement(f,{color:"error"},nj1(Y?D:D.split(');
+const errEndStr = '"to see all)"))';
+const errEnd = patched.indexOf(errEndStr, errStart);
+
+if (errStart > -1 && errEnd > -1) {
+    const OLD_ERR_REPLACE = patched.substring(errStart, errEnd + errEndStr.length);
+    const NEW_ERR_REPLACE = 'H=null,O=null';
+    patched = patched.replace(OLD_ERR_REPLACE, NEW_ERR_REPLACE);
+    console.log('✓  Error Red Strings entirely annihilated.');
     patchCount++;
 }
 
