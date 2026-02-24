@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-console.log("Claude Code Color Patcher v64 - EXTREME SILENCE TOOL MOD");
+console.log("Claude Code Color Patcher v72 - ABSOLUTELY FLATTENED ERROR STINGS");
 console.log("==========================================================");
 
 const cliPath = path.join(process.env.LOCALAPPDATA, 'mcp-bin', 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js');
@@ -85,7 +85,7 @@ if (patched.includes(OLD_HUNKS_2)) {
 // C. Brand the Start-Up header with the Patch Version
 patched = patched.replace(/Claude Code v/g, 'Claude Code Patch 55: v');
 const OLD_VERSION = /VERSION:"2\.1\.50"/g;
-const NEW_VERSION = 'VERSION:"Patch 64: v2.1.50"';
+const NEW_VERSION = 'VERSION:"Patch 72: v2.1.50"';
 patched = patched.replace(OLD_VERSION, NEW_VERSION);
 console.log('✓  Startup Version Banner Branded (Globally injected).');
 patchCount++;
@@ -152,13 +152,35 @@ const OLD_DOT = 'wz.default.createElement(b,{minWidth:2},wz.default.createElemen
 const NEW_DOT = 'wz.default.createElement(b,{minWidth:2},wz.default.createElement(f,{color:"claude"},"\\u258c "))';
 if (patched.includes(OLD_DOT)) { patched = patched.replace(OLD_DOT, NEW_DOT); patchCount++; }
 
-// We wrap the tool invocation (Bash name) in a strict 1-line box
+// We wrap the tool invocation (Bash name) in a single-line Green Box!
+// We strictly enforce 1-line truncation on the text so it never breaks layout styling constraints.
 const OLD_WRAPPER = 'I=EP.default.createElement(T,{flexDirection:N},v,y,m)';
-const NEW_WRAPPER = `I=EP.default.createElement(T,{flexDirection:N,backgroundColor:"rgb(27,25,23)",paddingX:1},v,y,m)`;
+const NEW_WRAPPER = `I=EP.default.createElement(T,{flexDirection:N,borderStyle:"single",borderColor:"bashBorder",backgroundColor:"rgb(27,25,23)",paddingX:1},v,null,null)`;
 
 if (patched.includes(OLD_WRAPPER)) {
     patched = patched.replace(OLD_WRAPPER, NEW_WRAPPER);
-    console.log('✓  Tool Invocation Header Box physically injected.');
+    console.log('✓  Individual Tool Invocation Green Boxes rendered.');
+    patchCount++;
+}
+
+// RESTORED NATIVE MAPPING: The AST grouping method failed safely.
+// (We do nothing here to let Ink render ToolUses and Errors individually as intended).
+
+// We dynamically TRUNCATE the extremely long Bash arguments (powershell scripts)!
+// Instead of clipping the layout box visually, we tell Ink to natively drop the text at 1-line.
+const OLD_N6 = 'EP.default.createElement(b,{flexWrap:"nowrap"},EP.default.createElement(f,null,"(",N6,")"))';
+const NEW_N6 = 'EP.default.createElement(b,{flexWrap:"nowrap"},EP.default.createElement(f,{wrap:"truncate-end"},"(",N6,")"))';
+if (patched.includes(OLD_N6)) {
+    patched = patched.replace(OLD_N6, NEW_N6);
+    console.log('✓  Native Line-Truncation attached to Tool Payload text.');
+    patchCount++;
+}
+
+// We restore the "└ " tree character in the Error string so it visibly stems from the preceding Green Box!
+const OLD_ERROR_PREFIX = 'O=lb8.default.createElement(f,{color:$,dimColor:Y},H)';
+const NEW_ERROR_PREFIX = 'O=lb8.default.createElement(f,{color:$,dimColor:Y},"└ ")';
+if (patched.includes(OLD_ERROR_PREFIX)) {
+    patched = patched.replace(OLD_ERROR_PREFIX, NEW_ERROR_PREFIX);
     patchCount++;
 }
 
@@ -174,6 +196,20 @@ if (patched.includes(OLD_TOOL_RESULT)) {
 const OLD_TOOL_BOX = 'U=EP.default.createElement(V,{flexDirection:h,justifyContent:B,marginTop:x,width:p},I)';
 const NEW_TOOL_BOX = `U=EP.default.createElement(V,{flexDirection:h,justifyContent:B,width:p},I)`;
 if (patched.includes(OLD_TOOL_BOX)) { patched = patched.replace(OLD_TOOL_BOX, NEW_TOOL_BOX); patchCount++; }
+
+// We manually force the Error Output text to perfectly truncate horizontally AND vertically!
+// First we strip out hardcoded newlines logic, replace newlines with a spacer, limit via Ink truncate, and nullify the tooltip
+const errStart = patched.indexOf('H=YP.createElement(f,{color:"error"},nj1(Y?D:D.split(');
+const errEndStr = '"to see all)"))';
+const errEnd = patched.indexOf(errEndStr, errStart);
+
+if (errStart > -1 && errEnd > -1) {
+    const OLD_ERR_REPLACE = patched.substring(errStart, errEnd + errEndStr.length);
+    const NEW_ERR_REPLACE = 'H=YP.createElement(f,{color:"error",wrap:"truncate-end"},nj1(D.replace(/\\n/g, " ¦ "))),O=null';
+    patched = patched.replace(OLD_ERR_REPLACE, NEW_ERR_REPLACE);
+    console.log('✓  Native Error String Flattening & Line-Truncation injected.');
+    patchCount++;
+}
 
 fs.writeFileSync(cliPath, patched, 'utf8');
 console.log(`\n✅ Done. ${patchCount} UI modifications correctly applied! Zoom strictly defeated.`);
