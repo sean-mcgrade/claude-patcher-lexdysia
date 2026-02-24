@@ -211,5 +211,18 @@ if (errStart > -1 && errEnd > -1) {
     patchCount++;
 }
 
+// POWERLINE SILENCER: We perfectly intercept the bottom CPU/RAM status bar and render nothing!
+const pwrStart = patched.indexOf('jq?nA.createElement(nA.Fragment,null,nA.createElement(f,{color:jq.bgColor},jq.text');
+const pwrEndStr = ',"──"):"─".repeat(p3)';
+const pwrEnd = patched.indexOf(pwrEndStr, pwrStart);
+
+if (pwrStart > -1 && pwrEnd > -1) {
+    const OLD_POWERLINE = patched.substring(pwrStart, pwrEnd + pwrEndStr.length);
+    const NEW_POWERLINE = 'jq?nA.createElement(nA.Fragment,null,"─".repeat(p3)):"─".repeat(p3)';
+    patched = patched.replace(OLD_POWERLINE, NEW_POWERLINE);
+    console.log('✓  Bottom Powerline (CPU/RAM/DSK) visually silenced.');
+    patchCount++;
+}
+
 fs.writeFileSync(cliPath, patched, 'utf8');
 console.log(`\n✅ Done. ${patchCount} UI modifications correctly applied! Zoom strictly defeated.`);
