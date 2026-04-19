@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Claude Code CLI v2.1.71 — Surgical AST + String Patch
- * ======================================================
- * PATCH VERSION: 3.1.0
+ * Claude Code CLI v2.1.81+ — Surgical AST + String Patch
+ * =======================================================
+ * PATCH VERSION: 3.2.0
  *
  * Hybrid approach:
  *   1. Parse AST to find switch statement positions by structural signature
@@ -14,15 +14,22 @@
  * Defense-in-depth levels:
  *   Level 1 (AST): Message-type switch — null "grouped_tool_use",
  *                  "collapsed_read_search" cases at the MAPPING level
- *   Level 2 (AST): Content-block switch (nsY) — null "tool_use",
+ *   Level 2 (AST): Content-block switch — null "tool_use",
  *                  "tool_result" cases at the RENDERER level
- *   Level 3 (Str): Leaf functions — null i3, M8, RAq, ZC4, HC4,
- *                  lAq, MD, O7q, K7q, DAq
+ *   Level 3 (Str): Leaf functions — null aK, q1, Uk4, xk4,
+ *                  ps4, VM, _t4, ss4, bg
+ *
+ * v3.2.0: Remap for CLI v2.1.81+
+ *   - All minified names remapped (Y6→z6, i3→aK, M8→q1, etc.)
+ *   - RAq removed (error bracket merged/eliminated in new build)
+ *   - DAq removed (shouldShowDot now inline in Uk4, caught by null)
+ *   - User messages use backgroundColor:"userMessageBackground" theme var
+ *   - Prompt border function n9()→tF()
+ *   - CLI path auto-detected via glob
  *
  * v3.1.0: Maroney Red user messages
  *   - User wrapper Box gets backgroundColor:#5c0000
- *   - f26 default case bypasses fAq (cyan borders) → renders user
- *     text directly with Maroney Red background via PO markdown renderer
+ *   - Cyan borders on assistant text wrapper
  *
  * This ensures:
  *   - Tool output is eliminated before wrapper Boxes are created (no ghost gaps)
@@ -36,6 +43,9 @@
 
 const fs = require('fs');
 const path = require('path');
+const { globSync } = require('fs').existsSync(path.join(process.env.USERPROFILE, 'node_modules', 'glob'))
+  ? require('glob')
+  : { globSync: null };
 const parser = require('@babel/parser');
 const _traverse = require('@babel/traverse');
 const t = require('@babel/types');
@@ -43,22 +53,56 @@ const t = require('@babel/types');
 const traverse = _traverse.default || _traverse;
 
 // ── Version ────────────────────────────────────────────────────────
-const PATCH_VERSION = '3.1.0';
+const PATCH_VERSION = '3.2.0';
 const PATCH_DATE = new Date().toISOString().split('T')[0];
 const PATCH_LABEL = `claude-ast-patch v${PATCH_VERSION} (${PATCH_DATE})`;
 
-// ── Config ─────────────────────────────────────────────────────────
-const CLI_PATH = path.join(
-  process.env.USERPROFILE,
-  'AppData', 'Local', 'mcp-bin', 'node_modules',
-  '@anthropic-ai', 'claude-code', 'cli.js'
-);
-const BACKUP_PATH = CLI_PATH + '.bak';
+// ── Config: Auto-detect CLI path ──────────────────────────────────
+function findCliJs() {
+  const candidates = [
+    // npx cache (current known location)
+    path.join(process.env.USERPROFILE, 'AppData', 'Local', 'npm-cache', '_npx'),
+    // mcp-bin (legacy location)
+    path.join(process.env.USERPROFILE, 'AppData', 'Local', 'mcp-bin'),
+  ];
 
-if (!fs.existsSync(CLI_PATH)) {
-  console.error('[FAIL] cli.js not found at:\n  ' + CLI_PATH);
+  for (const base of candidates) {
+    if (!fs.existsSync(base)) continue;
+    // Walk to find cli.js
+    const target = path.join('@anthropic-ai', 'claude-code', 'cli.js');
+    try {
+      const found = findFileRecursive(base, target, 5);
+      if (found) return found;
+    } catch {}
+  }
+  return null;
+}
+
+function findFileRecursive(dir, target, maxDepth) {
+  if (maxDepth <= 0) return null;
+  const candidate = path.join(dir, target);
+  if (fs.existsSync(candidate)) return candidate;
+  try {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      if (entry.name === '.cache' || entry.name === '.git') continue;
+      const result = findFileRecursive(path.join(dir, entry.name), target, maxDepth - 1);
+      if (result) return result;
+    }
+  } catch {}
+  return null;
+}
+
+const CLI_PATH = findCliJs();
+if (!CLI_PATH) {
+  console.error('[FAIL] cli.js not found. Searched npx cache and mcp-bin.');
+  console.error('       Set CLI_PATH env var to override.');
   process.exit(1);
 }
+console.log(`[found] ${CLI_PATH}`);
+
+const BACKUP_PATH = CLI_PATH + '.bak';
 
 // ── Step 1: Restore from backup ────────────────────────────────────
 if (fs.existsSync(BACKUP_PATH)) {
@@ -71,6 +115,15 @@ if (fs.existsSync(BACKUP_PATH)) {
 
 let code = fs.readFileSync(CLI_PATH, 'utf8');
 const originalSize = code.length;
+
+// ── Detect CLI version ────────────────────────────────────────────
+const pkgPath = CLI_PATH.replace('cli.js', 'package.json');
+let cliVersion = 'unknown';
+try {
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+  cliVersion = pkg.version || 'unknown';
+} catch {}
+console.log(`[version] Claude Code CLI v${cliVersion}`);
 
 // ── Step 2: AST Analysis ──────────────────────────────────────────
 console.log('\n  Parsing cli.js AST...');
@@ -113,17 +166,10 @@ function getSwitchCaseValues(switchNode) {
  * The consequent[0] is a BlockStatement. We insert after its opening "{".
  */
 function getCaseInsertOffset(switchCase) {
-  // The consequent is an array of statements.
-  // If first item is a BlockStatement, insert after its "{"
   if (switchCase.consequent.length > 0 &&
       t.isBlockStatement(switchCase.consequent[0])) {
-    // Insert after the opening brace
     return switchCase.consequent[0].start + 1;
   }
-  // If no block, insert after the case test colon.
-  // The case test ends at switchCase.test.end, then there's ":"
-  // But in practice, minified code wraps cases in blocks.
-  // Fallback: insert right at the start of consequent[0]
   if (switchCase.consequent.length > 0) {
     return switchCase.consequent[0].start;
   }
@@ -146,7 +192,6 @@ traverse(ast, {
   SwitchStatement(nodePath) {
     if (level1Found) return;
     const values = getSwitchCaseValues(nodePath.node);
-    // Unique signature: has both "grouped_tool_use" AND "collapsed_read_search"
     if (values.has('grouped_tool_use') &&
         values.has('collapsed_read_search') &&
         values.has('assistant')) {
@@ -178,7 +223,7 @@ traverse(ast, {
 });
 if (!level1Found) console.log('  [WARN] Message-type switch not found');
 
-// ── Level 2: Content-block switch (nsY) ────────────────────────────
+// ── Level 2: Content-block switch ──────────────────────────────────
 console.log('  -- Level 2: Content-block switch --');
 
 let level2Found = false;
@@ -186,13 +231,10 @@ traverse(ast, {
   SwitchStatement(nodePath) {
     if (level2Found) return;
     const values = getSwitchCaseValues(nodePath.node);
-    // Unique signature: has "tool_use" AND "text" AND "thinking" AND "tool_result"
-    // This uniquely identifies the content block renderer (nsY)
     if (values.has('tool_use') &&
         values.has('text') &&
         values.has('thinking') &&
         values.has('tool_result')) {
-      // Verify it's inside a function (not a data-processing switch)
       const funcParent = nodePath.findParent(p =>
         t.isFunctionDeclaration(p.node) ||
         t.isFunctionExpression(p.node) ||
@@ -236,7 +278,6 @@ traverse(ast, {
   IfStatement(nodePath) {
     if (summaryFound) return;
     const test = nodePath.node.test;
-    // Match: X.type === "summary"
     if (t.isBinaryExpression(test) &&
         test.operator === '===' &&
         t.isStringLiteral(test.right) &&
@@ -244,16 +285,12 @@ traverse(ast, {
         t.isMemberExpression(test.left) &&
         t.isIdentifier(test.left.property) &&
         test.left.property.name === 'type') {
-      // Verify this is in a rendering context (near createElement calls)
       const consequent = nodePath.node.consequent;
-      // Check that the consequent is a block with content
       if (t.isBlockStatement(consequent) && consequent.body.length > 0) {
-        // Look for "searchCount" or "readCount" identifiers in the body
-        // (these are props of the summary object used by iV1)
         const bodyStr = code.substring(consequent.start, consequent.end);
         if (bodyStr.includes('searchCount') || bodyStr.includes('readCount')) {
           summaryFound = true;
-          const offset = consequent.start + 1; // after "{"
+          const offset = consequent.start + 1;
           if (isAlreadyPatched(offset)) {
             console.log('  [SKIP] Summary rows -- already patched');
           } else {
@@ -284,9 +321,6 @@ for (const ins of insertions) {
 let strPatches = 0;
 
 function stringPatch(label, search, replacement) {
-  // Check if already applied: search must be ABSENT and replacement PRESENT.
-  // We check for search first — if it's still there, the patch hasn't been applied
-  // even if replacement happens to be a substring of the original code.
   const searchIdx = code.indexOf(search);
   if (searchIdx === -1) {
     if (code.includes(replacement)) {
@@ -306,83 +340,74 @@ function stringPatch(label, search, replacement) {
 // ═════════════════════════════════════════════════════════════════
 console.log('\n  -- Level 3: Leaf components --');
 
-// i3: tool error renderer (called 22x across codebase)
-// Returns: createElement(M8, null, Box(errorText, moreLines))
+// aK (was i3): tool error renderer
+// Returns: createElement(q1, null, Box(errorText, moreLines))
 stringPatch(
-  'i3: tool error renderer -> null',
-  'function i3(A){let q=Y6(16),{result:K,verbose:Y}=A',
-  'function i3(A){return null;let q=Y6(16),{result:K,verbose:Y}=A'
+  'aK: tool error renderer -> null',
+  'function aK(A){let q=z6(16),{result:K,verbose:_}=A',
+  'function aK(A){return null;let q=z6(16),{result:K,verbose:_}=A'
 );
 
-// M8: bracket wrapper (renders the "  ⎿  " gutter prefix)
+// q1 (was M8): bracket wrapper (renders the "  ⎿  " gutter prefix)
 stringPatch(
-  'M8: bracket wrapper -> null',
-  'function M8(A){let q=Y6(8),{children:K,height:Y}=A',
-  'function M8(A){return null;let q=Y6(8),{children:K,height:Y}=A'
+  'q1: bracket wrapper -> null',
+  'function q1(A){let q=z6(8),{children:K,height:_}=A',
+  'function q1(A){return null;let q=z6(8),{children:K,height:_}=A'
 );
 
-// RAq: error bracket wrapper (isError variant of M8)
+// RAq: REMOVED in v2.1.81+ (error bracket merged/eliminated)
+// No replacement needed — error rendering caught by bg (CF) patch below
+
+// Uk4 (was ZC4): tool_use content block renderer (● bullet + tool label)
 stringPatch(
-  'RAq: error bracket -> null',
-  'function RAq(A){let q=Y6(7),{children:K,isError:Y}=A',
-  'function RAq(A){return null;let q=Y6(7),{children:K,isError:Y}=A'
+  'Uk4: tool_use renderer -> null',
+  'function Uk4(A){let q=z6(70),{param:K',
+  'function Uk4(A){return null;let q=z6(70),{param:K'
 );
 
-// ZC4: tool_use content block renderer (● bullet + tool label)
+// xk4 (was HC4): tool_result content block renderer
 stringPatch(
-  'ZC4: tool_use renderer -> null',
-  'function ZC4(A){let q=Y6(57),{param:K',
-  'function ZC4(A){return null;let q=Y6(57),{param:K'
+  'xk4: tool_result renderer -> null',
+  'function xk4(A){let q=z6(28),{param:K,message:_,lookups:Y',
+  'function xk4(A){return null;let q=z6(28),{param:K,message:_,lookups:Y'
 );
 
-// HC4: tool_result content block renderer
+// ps4 (was lAq): attachment renderer (file read summaries, directory listings)
 stringPatch(
-  'HC4: tool_result renderer -> null',
-  'function HC4(A){let q=Y6(28),{param:K,message:Y,lookups:z',
-  'function HC4(A){return null;let q=Y6(28),{param:K,message:Y,lookups:z'
+  'ps4: attachment renderer -> null',
+  'function ps4({attachment:A,addMargin:q,verbose:K,isTranscriptMode:_}){',
+  'function ps4({attachment:A,addMargin:q,verbose:K,isTranscriptMode:_}){return null;'
 );
 
-// lAq: attachment renderer (file read summaries, directory listings)
+// VM (was MD): dimColor tool summary wrapper
 stringPatch(
-  'lAq: attachment renderer -> null',
-  'function lAq({attachment:A,addMargin:q,verbose:K,isTranscriptMode:Y}){if(Z7()',
-  'function lAq({attachment:A,addMargin:q,verbose:K,isTranscriptMode:Y}){return null;if(Z7()'
+  'VM: tool summary wrapper -> null',
+  'function VM(A){let q=z6(7),{dimColor:K,children:_,color:Y}=A',
+  'function VM(A){return null;let q=z6(7),{dimColor:K,children:_,color:Y}=A'
 );
 
-// MD: dimColor tool summary wrapper
+// _t4 (was O7q): collapsed read/search summary
 stringPatch(
-  'MD: tool summary wrapper -> null',
-  'function MD(A){let q=Y6(4),{dimColor:K,children:Y,color:z}=A',
-  'function MD(A){return null;let q=Y6(4),{dimColor:K,children:Y,color:z}=A'
+  '_t4: collapsed read/search -> null',
+  'function _t4({message:A,inProgressToolUseIDs:q,shouldAnimate:K,verbose:_,tools:Y,lookups:z,isActiveGroup:w}){',
+  'function _t4({message:A,inProgressToolUseIDs:q,shouldAnimate:K,verbose:_,tools:Y,lookups:z,isActiveGroup:w}){return null;'
 );
 
-// O7q: collapsed read/search summary
+// ss4 (was K7q): grouped tool use renderer
 stringPatch(
-  'O7q: collapsed read/search -> null',
-  'function O7q({message:A,inProgressToolUseIDs:q,shouldAnimate:K,verbose:Y,tools:z,lookups:w,isActiveGroup:_}){',
-  'function O7q({message:A,inProgressToolUseIDs:q,shouldAnimate:K,verbose:Y,tools:z,lookups:w,isActiveGroup:_}){return null;'
+  'ss4: grouped tool use -> null',
+  'function ss4({message:A,tools:q,lookups:K,inProgressToolUseIDs:_,shouldAnimate:Y}){',
+  'function ss4({message:A,tools:q,lookups:K,inProgressToolUseIDs:_,shouldAnimate:Y}){return null;'
 );
 
-// K7q: grouped tool use renderer
-stringPatch(
-  'K7q: grouped tool use -> null',
-  'function K7q({message:A,tools:q,lookups:K,inProgressToolUseIDs:Y,shouldAnimate:z}){',
-  'function K7q({message:A,tools:q,lookups:K,inProgressToolUseIDs:Y,shouldAnimate:z}){return null;'
-);
+// DAq: REMOVED — shouldShowDot is now inline in Uk4 (which we null entirely)
 
-// DAq: disable shouldShowDot bullet on text blocks
+// bg (was CF): text content renderer with error support
+// Wraps in q1, so already caught. But null it directly for safety.
 stringPatch(
-  'DAq: shouldShowDot -> false',
-  'H=z&&dY.default.createElement(m,{minWidth:2},dY.default.createElement(T,{color:"text"},B9))',
-  'H=false&&dY.default.createElement(m,{minWidth:2},dY.default.createElement(T,{color:"text"},B9))'
-);
-
-// CF: text content renderer with error support
-// Wraps in M8, so already caught. But null it directly for safety.
-stringPatch(
-  'CF: text content renderer -> null for errors',
-  'function CF(A){let q=Y6(10),{content:K,verbose:Y,isError:z,isWarning:w,linkifyUrls:_}=A',
-  'function CF(A){if(A.isError||A.isWarning)return null;let q=Y6(10),{content:K,verbose:Y,isError:z,isWarning:w,linkifyUrls:_}=A'
+  'bg: text content renderer -> null for errors',
+  'function bg(A){let q=z6(11),{content:K,verbose:_,isError:Y,isWarning:z,linkifyUrls:w}=A',
+  'function bg(A){if(A.isError||A.isWarning)return null;let q=z6(11),{content:K,verbose:_,isError:Y,isWarning:z,linkifyUrls:w}=A'
 );
 
 // ═════════════════════════════════════════════════════════════════
@@ -390,48 +415,27 @@ stringPatch(
 // ═════════════════════════════════════════════════════════════════
 console.log('\n  -- Cyan Borders & Maroney Red --');
 
+// Vw: cyan border on assistant message wrapper (SAME pattern as v2.1.71)
 stringPatch(
   'Vw: cyan border on assistant wrapper',
   'borderStyle:"round",borderColor:j,borderLeft:!1,borderRight:!1,borderBottom:!1,marginTop:1',
   'borderStyle:"round",borderColor:"#00E5FF",borderLeft:!1,borderRight:!1,borderBottom:!1,marginTop:1'
 );
 
-// fAq may have been previously patched with different styles.
-// Handle all known states: clean, partial (Maroney Red applied), and target.
-const FAQ_CLEAN    = 'dF8.default.createElement(m,{flexDirection:"column",marginTop:w,paddingRight:1},_)';
-const FAQ_PARTIAL  = 'dF8.default.createElement(m,{flexDirection:"column",marginTop:w,backgroundColor:"#5c0000",paddingRight:1,marginBottom:0},_)';
-const FAQ_PARTIAL2 = 'dF8.default.createElement(m,{flexDirection:"column",marginTop:w,backgroundColor:"#5c0000",paddingRight:1},_)';
-const FAQ_TARGET   = 'dF8.default.createElement(m,{flexDirection:"column",marginTop:w,borderStyle:"round",borderColor:"#00E5FF",paddingX:1,paddingY:0},_)';
-if (code.includes(FAQ_TARGET)) {
-  console.log('  [SKIP] fAq: cyan borders');
-} else if (code.includes(FAQ_PARTIAL)) {
-  stringPatch('fAq: assistant text -> cyan borders (from partial)', FAQ_PARTIAL, FAQ_TARGET);
-} else if (code.includes(FAQ_PARTIAL2)) {
-  stringPatch('fAq: assistant text -> cyan borders (from partial2)', FAQ_PARTIAL2, FAQ_TARGET);
-} else {
-  stringPatch('fAq: assistant text -> cyan borders', FAQ_CLEAN, FAQ_TARGET);
-}
+// User messages: Maroney Red background
+// v2.1.81+ uses theme var "userMessageBackground" instead of hardcoded color
+stringPatch(
+  'User msg: Maroney Red background',
+  'backgroundColor:"userMessageBackground",paddingRight:1',
+  'backgroundColor:"#5c0000",paddingRight:1'
+);
 
+// Prompt border: Maroney Red background
+// n9() changed to tF() in v2.1.81+
 stringPatch(
   'Prompt: Maroney Red background',
-  'borderColor:n9(),borderStyle:"round",borderLeft:!1,borderRight:!1,borderBottom:!0,width:"100%",borderText:',
-  'borderColor:n9(),borderStyle:"round",borderLeft:!1,borderRight:!1,borderBottom:!0,backgroundColor:"#5c0000",width:"100%",borderText:'
-);
-
-// v3.1.0 — Patch A: User message wrapper gets Maroney Red background
-// Targets the case"user" wrapper Box in the message-list switch
-stringPatch(
-  'User wrapper: Maroney Red background',
-  'o5.createElement(m,{flexDirection:"column",width:"100%"},y)',
-  'o5.createElement(m,{flexDirection:"column",width:"100%",backgroundColor:"#5c0000",paddingX:1},y)'
-);
-
-// v3.1.0 — Patch B: f26 default case bypasses fAq (which has cyan borders)
-// Renders user text directly with Maroney Red background + PO markdown renderer
-stringPatch(
-  'f26: user text -> Maroney Red (bypass fAq)',
-  '$=ZO.createElement(fAq,{addMargin:K,param:Y})',
-  '$=ZO.createElement(m,{flexDirection:"column",marginTop:K?1:0,backgroundColor:"#5c0000",paddingX:1,paddingBottom:1},ZO.createElement(PO,null,Y.text))'
+  'borderColor:tF(),borderStyle:"round",borderLeft:!1,borderRight:!1,borderBottom:!0,width:"100%",borderText:',
+  'borderColor:tF(),borderStyle:"round",borderLeft:!1,borderRight:!1,borderBottom:!0,backgroundColor:"#5c0000",width:"100%",borderText:'
 );
 
 // ═════════════════════════════════════════════════════════════════
@@ -439,45 +443,42 @@ stringPatch(
 // ═════════════════════════════════════════════════════════════════
 console.log('\n  -- Dashboard Uncap --');
 
-stringPatch(
-  'StatusLine: remove wrap:"wrap"',
-  'wrap:"wrap",flexShrink:0},Q$6.createElement(CK,null,w)',
-  'flexShrink:0},Q$6.createElement(CK,null,w)'
-);
-
+// StatusLine: add flexShrink:0 on outer Box
 stringPatch(
   'StatusLine: flexShrink:0 on outer Box',
-  'Q$6.createElement(m,{paddingX:V,gap:2},',
-  'Q$6.createElement(m,{paddingX:V,gap:2,flexShrink:0},'
+  'paddingX:k,gap:2}',
+  'paddingX:k,gap:2,flexShrink:0}'
 );
 
-stringPatch(
-  'Footer: flexShrink -> 0',
-  'flexShrink:A6},K6,z6',
-  'flexShrink:0},K6,z6'
-);
-
+// StatusLine: remove dimColor on status text
 stringPatch(
   'StatusLine: remove dimColor',
-  'createElement(T,{dimColor:!0,flexShrink:0},Q$6.createElement(CK,null,w)',
-  'createElement(T,{flexShrink:0},Q$6.createElement(CK,null,w)'
+  'dimColor:!0,wrap:"truncate"},c26.createElement(MK,null,w)',
+  'wrap:"truncate"},c26.createElement(MK,null,w)'
 );
 
+// R59: truncate flexShrink -> 0
 stringPatch(
   'R59: truncate flexShrink -> 0',
   'truncate:{flexGrow:0,flexShrink:1,flexDirection:"row",textWrap:"truncate"}',
   'truncate:{flexGrow:0,flexShrink:0,flexDirection:"row",textWrap:"truncate"}'
 );
 
+// Footer: flexShrink:0 on bottom border
 stringPatch(
   'Footer: flexShrink:0 on bottom border',
-  'borderColor:n9(),borderStyle:"round",borderLeft:!1,borderRight:!1,borderBottom:!0',
-  'borderColor:n9(),borderStyle:"round",borderLeft:!1,borderRight:!1,borderBottom:!0,flexShrink:0'
+  'borderColor:tF(),borderStyle:"round",borderLeft:!1,borderRight:!1,borderBottom:!0,width:"100%"',
+  'borderColor:tF(),borderStyle:"round",borderLeft:!1,borderRight:!1,borderBottom:!0,flexShrink:0,width:"100%"'
+);
+
+// Footer: flexShrink -> 0 on input area
+stringPatch(
+  'Footer: input flexShrink -> 0',
+  'flexGrow:1,flexShrink:1,onClick:V9',
+  'flexGrow:1,flexShrink:0,onClick:V9'
 );
 
 // ── Inject version marker into cli.js ─────────────────────────────
-// Appended as a trailing comment so it doesn't affect execution.
-// Readable with: grep "PATCH_VERSION" cli.js
 code += `\n;//${PATCH_LABEL}|ast:${astPatches}|str:${strPatches}\n`;
 
 // ── Write result ──────────────────────────────────────────────────
@@ -493,7 +494,7 @@ fs.writeFileSync(CLI_PATH, code, 'utf8');
 const versionFile = CLI_PATH.replace('cli.js', 'cli.js.patch-version');
 fs.writeFileSync(versionFile, [
   PATCH_LABEL,
-  `Target: cli.js v2.1.71`,
+  `Target: cli.js v${cliVersion}`,
   `AST patches: ${astPatches}`,
   `String patches: ${strPatches}`,
   `Total: ${totalPatches}`,
@@ -508,6 +509,7 @@ console.log(`
   ${PATCH_LABEL}
   ${astPatches} AST patches + ${strPatches} string patches = ${totalPatches} total
   ${originalSize} -> ${code.length} bytes (${delta >= 0 ? '+' : ''}${delta})
+  CLI: v${cliVersion}
 
   Version check:
     grep PATCH_VERSION cli.js
