@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Claude Code CLI v2.1.81+ — Surgical AST + String Patch
+ * Claude Code CLI v2.1.111+ — Surgical AST + String Patch
  * =======================================================
- * PATCH VERSION: 3.2.0
+ * PATCH VERSION: 4.0.0
  *
  * Hybrid approach:
  *   1. Parse AST to find switch statement positions by structural signature
@@ -16,16 +16,15 @@
  *                  "collapsed_read_search" cases at the MAPPING level
  *   Level 2 (AST): Content-block switch — null "tool_use",
  *                  "tool_result" cases at the RENDERER level
- *   Level 3 (Str): Leaf functions — null aK, q1, Uk4, xk4,
- *                  ps4, VM, _t4, ss4, bg
+ *   Level 3 (Str): Leaf functions — null d$, _1, Q$K, WHK,
+ *                  IjK, LH, UjK, ljK, LR
  *
- * v3.2.0: Remap for CLI v2.1.81+
- *   - All minified names remapped (Y6→z6, i3→aK, M8→q1, etc.)
- *   - RAq removed (error bracket merged/eliminated in new build)
- *   - DAq removed (shouldShowDot now inline in Uk4, caught by null)
- *   - User messages use backgroundColor:"userMessageBackground" theme var
- *   - Prompt border function n9()→tF()
- *   - CLI path auto-detected via glob
+ * v4.0.0: Remap for CLI v2.1.111+ (Opus 4.7 support)
+ *   - All minified names remapped (z6→s, aK→d$, q1→_1, etc.)
+ *   - Hook function: s(N) instead of z6(N)
+ *   - Prompt border function tF()→ru()
+ *   - Assistant border variable: j→H
+ *   - CLI path auto-detected including C:\ClaudeCode\cc-* dirs
  *
  * v3.1.0: Maroney Red user messages
  *   - User wrapper Box gets backgroundColor:#5c0000
@@ -53,16 +52,38 @@ const t = require('@babel/types');
 const traverse = _traverse.default || _traverse;
 
 // ── Version ────────────────────────────────────────────────────────
-const PATCH_VERSION = '3.2.0';
+const PATCH_VERSION = '4.0.0';
 const PATCH_DATE = new Date().toISOString().split('T')[0];
 const PATCH_LABEL = `claude-ast-patch v${PATCH_VERSION} (${PATCH_DATE})`;
 
 // ── Config: Auto-detect CLI path ──────────────────────────────────
 function findCliJs() {
+  // Check C:\ClaudeCode\cc-* directories first (user's primary install path)
+  const ccDir = 'C:\\ClaudeCode';
+  if (fs.existsSync(ccDir)) {
+    const ccDirs = fs.readdirSync(ccDir, { withFileTypes: true })
+      .filter(d => d.isDirectory() && d.name.startsWith('cc-'))
+      .map(d => d.name)
+      .sort((a, b) => {
+        // Numeric version sort: cc-2.1.111 > cc-2.1.84
+        const va = a.replace('cc-', '').split('.').map(Number);
+        const vb = b.replace('cc-', '').split('.').map(Number);
+        for (let i = 0; i < Math.max(va.length, vb.length); i++) {
+          const diff = (vb[i] || 0) - (va[i] || 0);
+          if (diff !== 0) return diff;
+        }
+        return 0;
+      }); // latest version first (numeric sort)
+    for (const dir of ccDirs) {
+      const candidate = path.join(ccDir, dir, 'node_modules', '@anthropic-ai', 'claude-code', 'cli.js');
+      if (fs.existsSync(candidate)) return candidate;
+    }
+  }
+
   const candidates = [
-    // npx cache (current known location)
+    // npx cache
     path.join(process.env.USERPROFILE, 'AppData', 'Local', 'npm-cache', '_npx'),
-    // mcp-bin (legacy location)
+    // mcp-bin (legacy)
     path.join(process.env.USERPROFILE, 'AppData', 'Local', 'mcp-bin'),
   ];
 
@@ -340,74 +361,67 @@ function stringPatch(label, search, replacement) {
 // ═════════════════════════════════════════════════════════════════
 console.log('\n  -- Level 3: Leaf components --');
 
-// aK (was i3): tool error renderer
-// Returns: createElement(q1, null, Box(errorText, moreLines))
+// d$ (was aK/i3): tool error renderer
 stringPatch(
-  'aK: tool error renderer -> null',
-  'function aK(A){let q=z6(16),{result:K,verbose:_}=A',
-  'function aK(A){return null;let q=z6(16),{result:K,verbose:_}=A'
+  'd$: tool error renderer -> null',
+  'function d$(q){let K=s(25),{result:_,verbose:z}=q',
+  'function d$(q){return null;let K=s(25),{result:_,verbose:z}=q'
 );
 
-// q1 (was M8): bracket wrapper (renders the "  ⎿  " gutter prefix)
+// _1 (was q1/M8): bracket wrapper (renders the "  ⎿  " gutter prefix)
 stringPatch(
-  'q1: bracket wrapper -> null',
-  'function q1(A){let q=z6(8),{children:K,height:_}=A',
-  'function q1(A){return null;let q=z6(8),{children:K,height:_}=A'
+  '_1: bracket wrapper -> null',
+  'function _1(q){let K=s(8),{children:_,height:z}=q',
+  'function _1(q){return null;let K=s(8),{children:_,height:z}=q'
 );
 
-// RAq: REMOVED in v2.1.81+ (error bracket merged/eliminated)
-// No replacement needed — error rendering caught by bg (CF) patch below
-
-// Uk4 (was ZC4): tool_use content block renderer (● bullet + tool label)
+// Q$K (was Uk4/ZC4): tool_use content block renderer (● bullet + tool label)
 stringPatch(
-  'Uk4: tool_use renderer -> null',
-  'function Uk4(A){let q=z6(70),{param:K',
-  'function Uk4(A){return null;let q=z6(70),{param:K'
+  'Q$K: tool_use renderer -> null',
+  'function Q$K(q){let K=s(93),{param:_',
+  'function Q$K(q){return null;let K=s(93),{param:_'
 );
 
-// xk4 (was HC4): tool_result content block renderer
+// WHK (was xk4/HC4): tool_result content block renderer
 stringPatch(
-  'xk4: tool_result renderer -> null',
-  'function xk4(A){let q=z6(28),{param:K,message:_,lookups:Y',
-  'function xk4(A){return null;let q=z6(28),{param:K,message:_,lookups:Y'
+  'WHK: tool_result renderer -> null',
+  'function WHK(q){let K=s(47),{param:_,message:z,lookups:Y',
+  'function WHK(q){return null;let K=s(47),{param:_,message:z,lookups:Y'
 );
 
-// ps4 (was lAq): attachment renderer (file read summaries, directory listings)
+// IjK (was ps4/lAq): attachment renderer (file read summaries, directory listings)
 stringPatch(
-  'ps4: attachment renderer -> null',
-  'function ps4({attachment:A,addMargin:q,verbose:K,isTranscriptMode:_}){',
-  'function ps4({attachment:A,addMargin:q,verbose:K,isTranscriptMode:_}){return null;'
+  'IjK: attachment renderer -> null',
+  'function IjK({attachment:q,addMargin:K,verbose:_,isTranscriptMode:z,messageUuid:Y}){',
+  'function IjK({attachment:q,addMargin:K,verbose:_,isTranscriptMode:z,messageUuid:Y}){return null;'
 );
 
-// VM (was MD): dimColor tool summary wrapper
+// LH (was VM/MD): dimColor tool summary wrapper
 stringPatch(
-  'VM: tool summary wrapper -> null',
-  'function VM(A){let q=z6(7),{dimColor:K,children:_,color:Y}=A',
-  'function VM(A){return null;let q=z6(7),{dimColor:K,children:_,color:Y}=A'
+  'LH: tool summary wrapper -> null',
+  'function LH(q){let K=s(7),{dimColor:_,children:z,color:Y}=q',
+  'function LH(q){return null;let K=s(7),{dimColor:_,children:z,color:Y}=q'
 );
 
-// _t4 (was O7q): collapsed read/search summary
+// UjK (was _t4/O7q): collapsed read/search summary
 stringPatch(
-  '_t4: collapsed read/search -> null',
-  'function _t4({message:A,inProgressToolUseIDs:q,shouldAnimate:K,verbose:_,tools:Y,lookups:z,isActiveGroup:w}){',
-  'function _t4({message:A,inProgressToolUseIDs:q,shouldAnimate:K,verbose:_,tools:Y,lookups:z,isActiveGroup:w}){return null;'
+  'UjK: collapsed read/search -> null',
+  'function UjK({message:q,inProgressToolUseIDs:K,shouldAnimate:_,verbose:z,tools:Y,lookups:A,isActiveGroup:O}){',
+  'function UjK({message:q,inProgressToolUseIDs:K,shouldAnimate:_,verbose:z,tools:Y,lookups:A,isActiveGroup:O}){return null;'
 );
 
-// ss4 (was K7q): grouped tool use renderer
+// ljK (was ss4/K7q): grouped tool use renderer
 stringPatch(
-  'ss4: grouped tool use -> null',
-  'function ss4({message:A,tools:q,lookups:K,inProgressToolUseIDs:_,shouldAnimate:Y}){',
-  'function ss4({message:A,tools:q,lookups:K,inProgressToolUseIDs:_,shouldAnimate:Y}){return null;'
+  'ljK: grouped tool use -> null',
+  'function ljK({message:q,tools:K,lookups:_,inProgressToolUseIDs:z,shouldAnimate:Y}){',
+  'function ljK({message:q,tools:K,lookups:_,inProgressToolUseIDs:z,shouldAnimate:Y}){return null;'
 );
 
-// DAq: REMOVED — shouldShowDot is now inline in Uk4 (which we null entirely)
-
-// bg (was CF): text content renderer with error support
-// Wraps in q1, so already caught. But null it directly for safety.
+// LR (was bg/CF): text content renderer with error support
 stringPatch(
-  'bg: text content renderer -> null for errors',
-  'function bg(A){let q=z6(11),{content:K,verbose:_,isError:Y,isWarning:z,linkifyUrls:w}=A',
-  'function bg(A){if(A.isError||A.isWarning)return null;let q=z6(11),{content:K,verbose:_,isError:Y,isWarning:z,linkifyUrls:w}=A'
+  'LR: text content renderer -> null for errors',
+  'function LR(q){let K=s(10),{content:_,verbose:z,isError:Y,isWarning:A}=q',
+  'function LR(q){if(q.isError||q.isWarning)return null;let K=s(10),{content:_,verbose:z,isError:Y,isWarning:A}=q'
 );
 
 // ═════════════════════════════════════════════════════════════════
@@ -415,27 +429,25 @@ stringPatch(
 // ═════════════════════════════════════════════════════════════════
 console.log('\n  -- Cyan Borders & Maroney Red --');
 
-// Vw: cyan border on assistant message wrapper (SAME pattern as v2.1.71)
+// Cyan border on assistant message wrapper (borderColor variable: H in v2.1.111)
 stringPatch(
-  'Vw: cyan border on assistant wrapper',
-  'borderStyle:"round",borderColor:j,borderLeft:!1,borderRight:!1,borderBottom:!1,marginTop:1',
+  'Cyan border on assistant wrapper',
+  'borderStyle:"round",borderColor:H,borderLeft:!1,borderRight:!1,borderBottom:!1,marginTop:1',
   'borderStyle:"round",borderColor:"#00E5FF",borderLeft:!1,borderRight:!1,borderBottom:!1,marginTop:1'
 );
 
 // User messages: Maroney Red background
-// v2.1.81+ uses theme var "userMessageBackground" instead of hardcoded color
 stringPatch(
   'User msg: Maroney Red background',
   'backgroundColor:"userMessageBackground",paddingRight:1',
   'backgroundColor:"#5c0000",paddingRight:1'
 );
 
-// Prompt border: Maroney Red background
-// n9() changed to tF() in v2.1.81+
+// Prompt border: Maroney Red background (ru() in v2.1.111)
 stringPatch(
   'Prompt: Maroney Red background',
-  'borderColor:tF(),borderStyle:"round",borderLeft:!1,borderRight:!1,borderBottom:!0,width:"100%",borderText:',
-  'borderColor:tF(),borderStyle:"round",borderLeft:!1,borderRight:!1,borderBottom:!0,backgroundColor:"#5c0000",width:"100%",borderText:'
+  'borderColor:ru(),borderStyle:"round",borderLeft:!1,borderRight:!1,borderBottom:!0,width:"100%",borderText:',
+  'borderColor:ru(),borderStyle:"round",borderLeft:!1,borderRight:!1,borderBottom:!0,backgroundColor:"#5c0000",width:"100%",borderText:'
 );
 
 // ═════════════════════════════════════════════════════════════════
@@ -443,18 +455,18 @@ stringPatch(
 // ═════════════════════════════════════════════════════════════════
 console.log('\n  -- Dashboard Uncap --');
 
-// StatusLine: add flexShrink:0 on outer Box
+// StatusLine: add flexShrink:0 on outer Box (padding var: B in v2.1.111)
 stringPatch(
   'StatusLine: flexShrink:0 on outer Box',
-  'paddingX:k,gap:2}',
-  'paddingX:k,gap:2,flexShrink:0}'
+  'paddingX:B,gap:2}',
+  'paddingX:B,gap:2,flexShrink:0}'
 );
 
 // StatusLine: remove dimColor on status text
 stringPatch(
   'StatusLine: remove dimColor',
-  'dimColor:!0,wrap:"truncate"},c26.createElement(MK,null,w)',
-  'wrap:"truncate"},c26.createElement(MK,null,w)'
+  'dimColor:!0,wrap:"truncate"},S66.createElement(v5,null,',
+  'wrap:"truncate"},S66.createElement(v5,null,'
 );
 
 // R59: truncate flexShrink -> 0
@@ -464,18 +476,11 @@ stringPatch(
   'truncate:{flexGrow:0,flexShrink:0,flexDirection:"row",textWrap:"truncate"}'
 );
 
-// Footer: flexShrink:0 on bottom border
+// Footer: flexShrink:0 on bottom border (ru() in v2.1.111)
 stringPatch(
   'Footer: flexShrink:0 on bottom border',
-  'borderColor:tF(),borderStyle:"round",borderLeft:!1,borderRight:!1,borderBottom:!0,width:"100%"',
-  'borderColor:tF(),borderStyle:"round",borderLeft:!1,borderRight:!1,borderBottom:!0,flexShrink:0,width:"100%"'
-);
-
-// Footer: flexShrink -> 0 on input area
-stringPatch(
-  'Footer: input flexShrink -> 0',
-  'flexGrow:1,flexShrink:1,onClick:V9',
-  'flexGrow:1,flexShrink:0,onClick:V9'
+  'borderColor:ru(),borderStyle:"round",borderLeft:!1,borderRight:!1,borderBottom:!0,width:"100%"',
+  'borderColor:ru(),borderStyle:"round",borderLeft:!1,borderRight:!1,borderBottom:!0,flexShrink:0,width:"100%"'
 );
 
 // ── Inject version marker into cli.js ─────────────────────────────
